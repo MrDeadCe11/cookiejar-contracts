@@ -17,6 +17,8 @@ import { IAccount } from "src/interfaces/IERC6551.sol";
 import { MinimalReceiver } from "src/lib/MinimalReceiver.sol";
 import { Base64 } from "src/lib/Base64.sol";
 
+import "forge-std/console2.sol";
+
 contract CookieNFT is ERC721 {
     using Counters for Counters.Counter;
 
@@ -38,6 +40,7 @@ contract CookieNFT is ERC721 {
     mapping(uint256 => Cookie) public cookies;
 
     event AccountCreated(address indexed account, address indexed cookieJar, uint256 tokenId);
+    event CookiesEaten(address indexed account, uint256 indexed tokenId, uint256 amount );
 
     constructor(
         address _erc6551Reg,
@@ -75,7 +78,7 @@ contract CookieNFT is ERC721 {
         _mint(to, tokenId);
 
         account =
-            IRegistry(erc6551Reg).createAccount(erc6551Imp, block.chainid, address(this), tokenId, block.timestamp, "");
+            IRegistry(erc6551Reg).createAccount(erc6551Imp, block.chainid, address(this), tokenId, tokenId, "");
         bytes memory initializerParams = abi.encode(account, periodLength, cookieAmount, cookieToken, allowList);
         bytes memory initializer = abi.encodeWithSignature("setUp(bytes)", initializerParams);
         string memory details = '{"type":"6551", "title":"Cookie NFT Gen 1", "description":"Gen1 Cookie", "link":""}';
@@ -90,6 +93,35 @@ contract CookieNFT is ERC721 {
 
         emit AccountCreated(account, cookieJar, tokenId);
     }
+
+    function eatCookies(uint256 tokenId) external returns(uint256){
+        require(msg.sender == ownerOf(tokenId), "can not eat someone else's cookies");
+        Cookie memory cookie = cookies[tokenId];
+        uint256 amount;
+        address account = IRegistry(erc6551Reg).account(erc6551Imp, block.chainid, address(this), tokenId, tokenId);
+        console2.log("ACCOUNT NFT: ", account);
+        if(cookie.cookieToken == address(0)){
+                amount = account.balance;
+                console2.log("BALANCE NFT: ", amount);
+            
+        } else {
+            amount = ERC20(cookie.cookieToken).balanceOf(account);
+        }
+
+        // CookieJarCore(account).eatCookie(amount);
+        // (bool success, ) = 
+        // account.delegatecall(abi.encodeWithSelector(bytes4(keccak256("executeTrustedCall(address,uint256,bytes)")), cookie.cookieToken,
+        //         0,
+        //         abi.encodeWithSignature("transfer(address,uint256)", abi.encodePacked(msg.sender, amount)))); 
+          
+          (bool success, ) = account.delegatecall(abi.encodeWithSelector(CookieJarCore.eatCookie.selector, amount));
+        require(success, "cookie token transfer failed");
+        
+        _burn(tokenId);
+        emit CookiesEaten(msg.sender, tokenId, amount);
+
+    }
+
 
     function _cookieBalance(uint256 tokenId) internal view returns (uint256) {
         if (cookies[tokenId].cookieToken == address(0)) {

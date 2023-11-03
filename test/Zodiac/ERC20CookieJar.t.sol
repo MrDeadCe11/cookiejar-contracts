@@ -7,7 +7,7 @@ import {TestAvatar} from "@gnosis.pm/zodiac/contracts/test/TestAvatar.sol";
 import {IPoster} from "@daohaus/baal-contracts/contracts/interfaces/IPoster.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import {Test, Vm} from "forge-std/Test.sol";
-
+import "forge-std/console2.sol";
 contract ERC20CookieJarTest is ZodiacCloneSummoner {
     ZodiacERC20CookieJarHarnass internal cookieJar;
 

@@ -56,6 +56,7 @@ interface ICookieJar {
      */
     function reachInJar(address cookieMonster, string calldata _reason) external;
 
+    function eatCookie(uint256 amount)external;
     /**
      * @notice Allows a member to assess the reason for a claim.
      * @dev The member can give a thumbs up or thumbs down to a claim reason. The assessment is posted to the Poster

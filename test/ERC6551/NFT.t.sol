@@ -19,6 +19,8 @@ import { ImpCookieJar6551 } from "src/ERC6551/ImpCookieJar6551.sol";
 
 import { ModuleProxyFactory } from "@gnosis.pm/zodiac/contracts/factory/ModuleProxyFactory.sol";
 
+import "forge-std/console2.sol";
+
 contract AccountRegistryTest is PRBTest {
     AccountERC6551 public implementation;
     AccountRegistry public accountRegistry;
@@ -47,6 +49,13 @@ contract AccountRegistryTest is PRBTest {
             address(cookieJarSummoner),
             address(listCookieJarImp)
         );
+
+        vm.label(address(implementation), "ERC6551 Implementation");
+        vm.label(address(accountRegistry), "ERC6551 Acount Registry");
+        vm.label(address(cookieJarSummoner), "Cookie Jar Summoner");
+        vm.label(address(listCookieJarImp), "List Cookie Jar Imp");
+        vm.label(address(moduleProxyFactory), "Module Proxy Factory");
+        vm.label(address(tokenCollection), "Token Collection");
 
         vm.mockCall(0x000000000000cd17345801aa8147b8D3950260FF, abi.encodeWithSelector(IPoster.post.selector), "");
     }
@@ -135,4 +144,35 @@ contract AccountRegistryTest is PRBTest {
 
         tokenCollection.tokenURI(tokenId);
     }
+
+    function testEatCookies() public {
+        address user1 = vm.addr(56);
+        payable(user1).call{ value: 1 ether }("");
+
+        uint256 cookieAmount = 1e16;
+        uint256 periodLength = 3600;
+        address cookieToken = address(cookieJarImp);
+        address[] memory allowList = new address[](0);
+
+
+        vm.startPrank(user1);
+         (address account,address cookieJar, uint256 tokenId) = tokenCollection.cookieMint(user1, periodLength, cookieAmount, cookieToken, address(0), 0, allowList);
+        vm.label(account, "Minted account");
+        (bool sent,) = payable(account).call{ value: 1 ether }("");
+        assertEq(account.balance, 1 ether, "ether not sent to cookie jar");
+        console2.log("ACCOUNT TEST: ",account);
+        console2.log("COOKIE JAR", cookieJar);
+        console2.log("TOKEN ID", tokenId);
+        console2.log("ACCOUNT BALANCE", account.balance);
+        ImpCookieJar6551 callableAccount = ImpCookieJar6551(payable(account));
+        console2.log("COOKIE AMOUNT: ", callableAccount.cookieAmount());
+
+        console2.log("UNLOCK: ", implementation.unlockTimestamp());
+        console2.log("CURRENT TIME: ", block.timestamp);
+        tokenCollection.eatCookies(tokenId);
+        assertEq(user1.balance, 1 ether, "balance not transfered");
+        // assertEq(tokenCollection.ownerOf(tokenId), address(0), "token not burnt");
+
+    }
+
 }

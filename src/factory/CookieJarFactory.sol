@@ -100,4 +100,5 @@ contract CookieJarFactory is Ownable {
         emit SummonCookieJar(address(cookieJar), _initializer, _details, uid);
         return address(cookieJar);
     }
+
 }

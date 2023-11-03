@@ -15,8 +15,8 @@ abstract contract Giver6551 {
     address public constant SUSTAINABILITY_ADDR = 0x1cE42BA793BA1E9Bf36c8b3f0aDDEe6c89D9a9fc;
 
     function giveCookie(address cookieMonster, uint256 amount, address cookieToken) internal {
-        uint256 fee = (amount / PERC_POINTS) * SUSTAINABILITY_FEE;
-
+        uint256 fee = (amount / PERC_POINTS) * SUSTAINABILITY_FEE;   
+        
         AccountERC6551 targetContract = AccountERC6551(payable(target));
 
         if (cookieToken == address(0)) {

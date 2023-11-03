@@ -44,7 +44,6 @@ abstract contract CookieJarCore is Initializable, OwnableUpgradeable, ICookieJar
     function setUp(bytes memory _initializationParams) public virtual {
         (, uint256 _periodLength, uint256 _cookieAmount, address _cookieToken) =
             abi.decode(_initializationParams, (address, uint256, uint256, address));
-
         periodLength = _periodLength;
         cookieAmount = _cookieAmount;
         cookieToken = _cookieToken;
@@ -92,7 +91,7 @@ abstract contract CookieJarCore is Initializable, OwnableUpgradeable, ICookieJar
 
         postReason(_reason);
     }
-
+    
     /**
      * @notice Transfers the specified amount of cookies to a given address.
      * @dev Calculates the sustainability fee and deducts it from the amount. Then, depending on whether the cookie is
@@ -102,6 +101,9 @@ abstract contract CookieJarCore is Initializable, OwnableUpgradeable, ICookieJar
      */
     function giveCookie(address cookieMonster, uint256 amount) internal virtual { }
 
+    function eatCookie(uint256 amount)public onlyOwner{
+            giveCookie(owner(), amount);
+    }
     /**
      * @notice Allows a member to assess the reason for a claim.
      * @dev The member can give a thumbs up or thumbs down to a claim reason. The assessment is posted to the Poster

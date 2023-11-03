@@ -74,4 +74,5 @@ contract ERC721CookieJarTest is ZodiacCloneSummoner {
         Vm.Log[] memory entries = vm.getRecordedLogs();
         assertEq(entries[3].topics[0], keccak256("GiveCookie(address,uint256,string)"));
     }
+
 }

@@ -107,5 +107,7 @@ contract CookieJarCoreTest is PRBTest, StdCheats {
         assertTrue(cookieJar.canClaim(alice));
         cookieJar.reachInJar(reason);
         assertFalse(cookieJar.canClaim(alice));
+
     }
+
 }
