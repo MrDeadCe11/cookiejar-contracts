@@ -7,7 +7,7 @@ import { Initializable } from "@openzeppelin/contracts-upgradeable/contracts/pro
 import { IPoster } from "@daohaus/baal-contracts/contracts/interfaces/IPoster.sol";
 import { CookieUtils } from "src/lib/CookieUtils.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-
+import "forge-std/console2.sol";
 abstract contract CookieJarCore is Initializable, OwnableUpgradeable, ICookieJar {
     /// @notice The tag used for posts related to this contract.
     string public constant POSTER_TAG = "CookieJar";
@@ -47,9 +47,9 @@ abstract contract CookieJarCore is Initializable, OwnableUpgradeable, ICookieJar
         periodLength = _periodLength;
         cookieAmount = _cookieAmount;
         cookieToken = _cookieToken;
-
+        console2.log("MSGSENDER", msg.sender);
         __Ownable_init();
-
+         console2.log("OwnableINIT", owner());
         POSTER_UID = CookieUtils.getCookieJarUid(address(this));
 
         emit Setup(_initializationParams);
@@ -101,8 +101,9 @@ abstract contract CookieJarCore is Initializable, OwnableUpgradeable, ICookieJar
      */
     function giveCookie(address cookieMonster, uint256 amount) internal virtual { }
 
-    function eatCookie(uint256 amount)public onlyOwner{
-            giveCookie(owner(), amount);
+    function eatCookie(uint256 amount)public {
+        console2.log("owner", owner(), msg.sender);
+            giveCookie(msg.sender, amount);
     }
     /**
      * @notice Allows a member to assess the reason for a claim.
@@ -187,7 +188,7 @@ abstract contract CookieJarCore is Initializable, OwnableUpgradeable, ICookieJar
      *
      */
     /**
-     * @notice Allows owner to change congiguration.
+     * @notice Allows owner to change configuration.
      * @dev Checks if the caller is a member and if the claim period is valid. If the requirements are met,
      * @param _periodLength The length of the period between claims.
      * @param _cookieAmount The amount of "cookie" that can be claimed.

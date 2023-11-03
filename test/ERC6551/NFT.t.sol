@@ -50,7 +50,7 @@ contract AccountRegistryTest is PRBTest {
             address(listCookieJarImp)
         );
 
-        vm.label(address(implementation), "ERC6551 Implementation");
+        vm.label(address(implementation), "Account ERC6551 Implementation");
         vm.label(address(accountRegistry), "ERC6551 Acount Registry");
         vm.label(address(cookieJarSummoner), "Cookie Jar Summoner");
         vm.label(address(listCookieJarImp), "List Cookie Jar Imp");
