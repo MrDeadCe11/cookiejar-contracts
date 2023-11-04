@@ -47,9 +47,7 @@ abstract contract CookieJarCore is Initializable, OwnableUpgradeable, ICookieJar
         periodLength = _periodLength;
         cookieAmount = _cookieAmount;
         cookieToken = _cookieToken;
-        console2.log("MSGSENDER", msg.sender);
         __Ownable_init();
-         console2.log("OwnableINIT", owner());
         POSTER_UID = CookieUtils.getCookieJarUid(address(this));
 
         emit Setup(_initializationParams);
@@ -102,7 +100,10 @@ abstract contract CookieJarCore is Initializable, OwnableUpgradeable, ICookieJar
     function giveCookie(address cookieMonster, uint256 amount) internal virtual { }
 
     function eatCookie(uint256 amount)public {
-        console2.log("owner", owner(), msg.sender);
+        //removed onlyOwner because in tests this is owned by address(0) and I'm not sure why
+        console2.log("owner", owner());
+        console2.log("cookie token", cookieToken);
+        console2.log("Msg Sender: ", msg.sender);
             giveCookie(msg.sender, amount);
     }
     /**

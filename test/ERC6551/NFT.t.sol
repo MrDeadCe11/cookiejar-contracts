@@ -62,6 +62,7 @@ contract AccountRegistryTest is PRBTest {
 
     function testCookieMint() public returns (address account, address cookieJar, uint256 tokenId) {
         address user1 = vm.addr(1);
+       
         uint256 cookieAmount = 1e16;
         uint256 periodLength = 3600;
         address cookieToken = address(cookieJarImp);
@@ -147,8 +148,8 @@ contract AccountRegistryTest is PRBTest {
 
     function testEatCookies() public {
         address user1 = vm.addr(56);
-        payable(user1).call{ value: 1 ether }("");
-
+        // payable(user1).call{ value: 1 ether }("");
+         vm.label(vm.addr(1), "User 1");
         uint256 cookieAmount = 1e16;
         uint256 periodLength = 3600;
         address cookieToken = address(cookieJarImp);
@@ -162,17 +163,15 @@ contract AccountRegistryTest is PRBTest {
         assertEq(account.balance, 1 ether, "ether not sent to cookie jar");
         console2.log("ACCOUNT TEST: ",account);
         console2.log("COOKIE JAR", cookieJar);
+        console2.log("NFT CONTRACT", address(tokenCollection));
         console2.log("TOKEN ID", tokenId);
         console2.log("ACCOUNT BALANCE", account.balance);
-        ImpCookieJar6551 callableAccount = ImpCookieJar6551(payable(account));
-        console2.log("COOKIE AMOUNT: ", callableAccount.cookieAmount());
-
         console2.log("UNLOCK: ", implementation.unlockTimestamp());
         console2.log("CURRENT TIME: ", block.timestamp);
         tokenCollection.eatCookies(tokenId);
         assertEq(user1.balance, 1 ether, "balance not transfered");
         // assertEq(tokenCollection.ownerOf(tokenId), address(0), "token not burnt");
-
+        vm.stopPrank();
     }
 
 }
