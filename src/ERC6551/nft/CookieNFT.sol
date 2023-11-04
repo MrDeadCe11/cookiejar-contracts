@@ -109,7 +109,7 @@ contract CookieNFT is ERC721 {
         }
         console2.log("COOKIE JAR: ", cookie.cookieJar, account);
 
-        (bool success, ) = account.delegatecall(abi.encodeWithSelector(bytes4(keccak256("executeTrustedCall(address,uint256,bytes)")), cookie.cookieJar, amount, abi.encodeWithSelector(bytes4(keccak256("eatCookie(uint256)")), amount)));
+        (bool success, ) = cookie.cookieJar.delegatecall(abi.encodeWithSelector(bytes4(keccak256("eatCookie(uint256)")), amount));
         
         require(success, "cookie token transfer failed");
         
