@@ -8,6 +8,7 @@ import { IPoster } from "@daohaus/baal-contracts/contracts/interfaces/IPoster.so
 import { CookieUtils } from "src/lib/CookieUtils.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import "forge-std/console2.sol";
+
 abstract contract CookieJarCore is Initializable, OwnableUpgradeable, ICookieJar {
     /// @notice The tag used for posts related to this contract.
     string public constant POSTER_TAG = "CookieJar";
@@ -89,7 +90,7 @@ abstract contract CookieJarCore is Initializable, OwnableUpgradeable, ICookieJar
 
         postReason(_reason);
     }
-    
+
     /**
      * @notice Transfers the specified amount of cookies to a given address.
      * @dev Calculates the sustainability fee and deducts it from the amount. Then, depending on whether the cookie is
@@ -99,13 +100,6 @@ abstract contract CookieJarCore is Initializable, OwnableUpgradeable, ICookieJar
      */
     function giveCookie(address cookieMonster, uint256 amount) internal virtual { }
 
-    function eatCookie(uint256 amount)public {
-        //removed onlyOwner because in tests this is owned by address(0) and I'm not sure why
-        console2.log("owner", owner());
-        console2.log("cookie token", cookieToken);
-        console2.log("Msg Sender: ", msg.sender);
-            giveCookie(msg.sender, amount);
-    }
     /**
      * @notice Allows a member to assess the reason for a claim.
      * @dev The member can give a thumbs up or thumbs down to a claim reason. The assessment is posted to the Poster
@@ -118,6 +112,7 @@ abstract contract CookieJarCore is Initializable, OwnableUpgradeable, ICookieJar
      *    content: "...reason..."
      *  }
      */
+
     function assessReason(string calldata _cookieUid, bool _isGood) public {
         require(isAllowList(msg.sender), "not a member");
         string memory assessTag = string.concat(POSTER_TAG, ".", POSTER_UID, ".reaction.", _cookieUid);

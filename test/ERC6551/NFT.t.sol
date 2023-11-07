@@ -62,7 +62,7 @@ contract AccountRegistryTest is PRBTest {
 
     function testCookieMint() public returns (address account, address cookieJar, uint256 tokenId) {
         address user1 = vm.addr(1);
-       
+
         uint256 cookieAmount = 1e16;
         uint256 periodLength = 3600;
         address cookieToken = address(cookieJarImp);
@@ -149,19 +149,41 @@ contract AccountRegistryTest is PRBTest {
     function testEatCookies() public {
         address user1 = vm.addr(56);
         // payable(user1).call{ value: 1 ether }("");
-         vm.label(vm.addr(1), "User 1");
+        vm.label(vm.addr(1), "User 1");
         uint256 cookieAmount = 1e16;
         uint256 periodLength = 3600;
         address cookieToken = address(cookieJarImp);
         address[] memory allowList = new address[](0);
 
+        // FIX : send 1 eth to user1 before mocking as them
+        payable(user1).call{ value: 1 ether }("");
 
         vm.startPrank(user1);
-         (address account,address cookieJar, uint256 tokenId) = tokenCollection.cookieMint(user1, periodLength, cookieAmount, cookieToken, address(0), 0, allowList);
+        console2.log("MSG Sender: ", msg.sender); //0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38
+        console2.log("Balance of msg.sender", msg.sender.balance); // 79228162514264337593543950335
+
+        console2.log("User 1", user1); // 0xa33C9D26e1E33b84247dEFCA631c1d30FFc76F5d
+        console2.log("Balance of user1: ", user1.balance); // 0
+
+        (address account, address cookieJar, uint256 tokenId) =
+            tokenCollection.cookieMint(user1, periodLength, cookieAmount, cookieToken, address(0), 0, allowList);
+
+        // ownerOf: 0xa33C9D26e1E33b84247dEFCA631c1d30FFc76F5d
+        // ExecutorUpdated(owner: 0xa33C9D26e1E33b84247dEFCA631c1d30FFc76F5d, executor:
+        // 0x1499F3E027028E6E473031082f032A29814f1Ee4)
+
         vm.label(account, "Minted account");
+
+        //Sending as user1, with 0 balance, so call reverts.
         (bool sent,) = payable(account).call{ value: 1 ether }("");
+
+        // FIX add sanity check
+        require(sent, "Failed to send Ether?");
+
+        // -vvv reveals: emit LogNamedString(key: Error, value: ether not sent to cookie jar)
         assertEq(account.balance, 1 ether, "ether not sent to cookie jar");
-        console2.log("ACCOUNT TEST: ",account);
+
+        console2.log("ACCOUNT TEST: ", account);
         console2.log("COOKIE JAR", cookieJar);
         console2.log("NFT CONTRACT", address(tokenCollection));
         console2.log("TOKEN ID", tokenId);
@@ -173,5 +195,4 @@ contract AccountRegistryTest is PRBTest {
         // assertEq(tokenCollection.ownerOf(tokenId), address(0), "token not burnt");
         vm.stopPrank();
     }
-
 }
