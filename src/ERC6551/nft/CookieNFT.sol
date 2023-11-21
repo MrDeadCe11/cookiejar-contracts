@@ -17,6 +17,8 @@ import { IAccount } from "src/interfaces/IERC6551.sol";
 import { MinimalReceiver } from "src/lib/MinimalReceiver.sol";
 import { Base64 } from "src/lib/Base64.sol";
 
+import { ImpCookieJar6551 } from "src/ERC6551/ImpCookieJar6551.sol";
+
 import "forge-std/console2.sol";
 
 contract CookieNFT is ERC721 {
@@ -35,12 +37,15 @@ contract CookieNFT is ERC721 {
         uint256 periodLength;
         uint256 cookieAmount;
         address cookieToken;
+        address erc6551Account;
     }
 
     mapping(uint256 => Cookie) public cookies;
 
     event AccountCreated(address indexed account, address indexed cookieJar, uint256 tokenId);
     event CookiesEaten(address indexed account, uint256 indexed tokenId, uint256 amount);
+
+    error InvalidCaller();
 
     constructor(
         address _erc6551Reg,
@@ -88,48 +93,23 @@ contract CookieNFT is ERC721 {
 
         AccountERC6551(payable(account)).setExecutorInit(cookieJar);
 
-        cookies[tokenId] = Cookie(cookieJar, periodLength, cookieAmount, cookieToken);
+        cookies[tokenId] = Cookie(cookieJar, periodLength, cookieAmount, cookieToken, account);
 
         emit AccountCreated(account, cookieJar, tokenId);
     }
 
-    function eatCookies(uint256 tokenId) external returns (uint256) {
-        require(msg.sender == ownerOf(tokenId), "can not eat someone else's cookies");
-        Cookie memory cookie = cookies[tokenId];
 
-        // FIX get token amount from internal balance call
-        uint256 amount = _cookieBalance(tokenId);
-        address account = IRegistry(erc6551Reg).account(erc6551Imp, block.chainid, address(this), tokenId, tokenId);
-        console2.log("ACCOUNT NFT: ", account);
-        console2.log("CookieJar balance: ", amount);
-
-        // FIX Replaced at line 101 with internal call
-        // if (cookie.cookieToken == address(0)) {
-        //     amount = account.balance;
-        //     console2.log("BALANCE NFT: ", amount);
-        // } else {
-        //     amount = ERC20(cookie.cookieToken).balanceOf(account);
-        // }
-        console2.log("COOKIE JAR: ", cookie.cookieJar, account);
-        console2.log("COOKIE TOKEN: ", cookie.cookieToken);
-
-        // Call cookieJar
-        // TODO this fails because:
-        // COOKIE TOKEN in this contract: 0x0000000000000000000000000000000000000000
-        // COOKIE TOKEN when executing eatCookie: 0x0000000000000000000000000000000000000034
-        // So there's something wrong in the encoding
-        bytes memory crumbs = abi.encodePacked(amount, cookie.cookieToken);
-        (bool success,) = cookie.cookieJar.delegatecall(abi.encodeWithSignature("eatCookie(uint256,address)", crumbs));
-
-        require(success, "cookie token transfer failed");
-
-        _burn(tokenId);
-        emit CookiesEaten(msg.sender, tokenId, amount);
+    function burn(uint256 tokenId) external {
+        if(address(cookies[tokenId].cookieJar) != msg.sender){
+            revert InvalidCaller();
+        }
+        
+        return _burn(tokenId);
     }
 
     function _cookieBalance(uint256 tokenId) internal view returns (uint256) {
         if (cookies[tokenId].cookieToken == address(0)) {
-            return address(this).balance;
+            return address(cookies[tokenId].cookieJar).balance;
         } else {
             return ERC20(cookies[tokenId].cookieToken).balanceOf(cookies[tokenId].cookieJar);
         }

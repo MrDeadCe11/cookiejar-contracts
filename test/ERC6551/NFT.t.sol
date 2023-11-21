@@ -147,52 +147,108 @@ contract AccountRegistryTest is PRBTest {
     }
 
     function testEatCookies() public {
-        address user1 = vm.addr(56);
-        // payable(user1).call{ value: 1 ether }("");
+        address user1 = vm.addr(1);
+
         vm.label(vm.addr(1), "User 1");
         uint256 cookieAmount = 1e16;
         uint256 periodLength = 3600;
         address cookieToken = address(cookieJarImp);
-        address[] memory allowList = new address[](0);
+        address[] memory allowList = new address[](1);
 
-        // FIX : send 1 eth to user1 before mocking as them
-        payable(user1).call{ value: 1 ether }("");
+        vm.deal(user1, 2 ether);
 
         vm.startPrank(user1);
-        console2.log("MSG Sender: ", msg.sender); //0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38
-        console2.log("Balance of msg.sender", msg.sender.balance); // 79228162514264337593543950335
-
-        console2.log("User 1", user1); // 0xa33C9D26e1E33b84247dEFCA631c1d30FFc76F5d
-        console2.log("Balance of user1: ", user1.balance); // 0
 
         (address account, address cookieJar, uint256 tokenId) =
             tokenCollection.cookieMint(user1, periodLength, cookieAmount, cookieToken, address(0), 0, allowList);
 
-        // ownerOf: 0xa33C9D26e1E33b84247dEFCA631c1d30FFc76F5d
-        // ExecutorUpdated(owner: 0xa33C9D26e1E33b84247dEFCA631c1d30FFc76F5d, executor:
-        // 0x1499F3E027028E6E473031082f032A29814f1Ee4)
+        allowList[0] = user1;
+
+        ImpCookieJar6551 cookieJarCon = ImpCookieJar6551(cookieJar);
 
         vm.label(account, "Minted account");
+        vm.label(cookieJar, "Cookie jar");
 
         //Sending as user1, with 0 balance, so call reverts.
         (bool sent,) = payable(account).call{ value: 1 ether }("");
 
         // FIX add sanity check
         require(sent, "Failed to send Ether?");
-
-        // -vvv reveals: emit LogNamedString(key: Error, value: ether not sent to cookie jar)
         assertEq(account.balance, 1 ether, "ether not sent to cookie jar");
-
-        console2.log("ACCOUNT TEST: ", account);
-        console2.log("COOKIE JAR", cookieJar);
-        console2.log("NFT CONTRACT", address(tokenCollection));
-        console2.log("TOKEN ID", tokenId);
-        console2.log("ACCOUNT BALANCE", account.balance);
-        console2.log("UNLOCK: ", implementation.unlockTimestamp());
-        console2.log("CURRENT TIME: ", block.timestamp);
-        tokenCollection.eatCookies(tokenId);
-        assertEq(user1.balance, 1 ether, "balance not transfered");
-        // assertEq(tokenCollection.ownerOf(tokenId), address(0), "token not burnt");
         vm.stopPrank();
+
+        // revert when called by other than owner of the contract
+        vm.expectRevert(ImpCookieJar6551.InvalidCaller.selector);
+        vm.prank(address(0xbeef));
+        cookieJarCon.eatCookies(account.balance, address(0), tokenId, address(tokenCollection));
+        
+        // call succeeds
+        vm.prank(user1);
+        cookieJarCon.eatCookies(account.balance, address(0), tokenId, address(tokenCollection));
+        assertEq(user1.balance, 2 ether, "balance not transfered to user");
+
+        // check that token has been burnt
+        
+        vm.expectRevert("ERC721: invalid token ID");
+        tokenCollection.ownerOf(tokenId);
+    }
+
+    function testEatCookiesERC20() public {
+        address user1 = vm.addr(1);
+
+        vm.label(vm.addr(1), "User 1");
+        uint256 cookieAmount = 1e16;
+        uint256 periodLength = 3600;
+        address cookieToken = address(cookieJarImp);
+        address[] memory allowList = new address[](1);
+        allowList[0] = user1;
+
+        ERC20Mintable erc20mintable = new ERC20Mintable("MINT", "MNT");
+        
+        erc20mintable.mint(user1, 2 ether);
+
+        vm.startPrank(user1);
+
+        (address account, address cookieJar, uint256 tokenId) =
+        
+        tokenCollection.cookieMint(
+            user1, 
+            periodLength, 
+            cookieAmount, 
+            cookieToken, 
+            address(erc20mintable), 
+            0, 
+            allowList
+            );
+
+        
+
+        ImpCookieJar6551 cookieJarCon = ImpCookieJar6551(cookieJar);
+
+        vm.label(account, "Minted account");
+        vm.label(cookieJar, "Cookie jar");
+
+        //Sending as user1, with 0 balance, so call reverts.
+        erc20mintable.transfer(account, 1 ether);
+
+        assertEq(erc20mintable.balanceOf(account), 1 ether, "ether not sent to cookie jar");
+        vm.stopPrank();
+        
+        //revert when called by other than owner of the contract
+        uint256 amount = erc20mintable.balanceOf(account);
+        vm.expectRevert(ImpCookieJar6551.InvalidCaller.selector);
+        vm.prank(address(0xbeef));
+        cookieJarCon.eatCookies(amount, address(erc20mintable), tokenId, address(tokenCollection));
+        
+        // call succeeds
+        vm.prank(user1);
+        cookieJarCon.eatCookies(amount, address(erc20mintable), tokenId, address(tokenCollection));
+
+        assertEq(erc20mintable.balanceOf(user1), 2 ether, "balance not transfered to user");
+
+        // check that token has been burnt
+        
+        vm.expectRevert("ERC721: invalid token ID");
+        tokenCollection.ownerOf(tokenId);
     }
 }
